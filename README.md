@@ -3,11 +3,20 @@ Jump
 
 Very lightweight tool to bookmark some directories and jump to them quickly
 
+# Installation
+
+Download this repo and run the following
+
+```bash
+make install
+```
+
+
 # Usage
 
 ## Creating a bookmark
 
-Change directory you want to bookmark and give it a little name
+Cd to directory you want to bookmark and give it a little name
 
 ```bash
 cd ~/I/love/this/directory/so/much
@@ -33,15 +42,7 @@ jump favorite_dir_ever
 ## Remove bookmarked directory
 
 ```bash
-jump --clear out_of_favour_directory
-```
-
-# Installation
-
-Download this repo and run the following
-
-```bash
-make install
+jump --clear name_of_the_bookmark_that_is_no_longer_in_favour
 ```
 
 # How it works
