@@ -22,8 +22,6 @@ config_file_directory = (++ "/.config/jump/") <$> getHomeDirectory
 bookmark_db_location :: IO FilePath
 bookmark_db_location = (++ "bookmarks.txt") <$> config_file_directory
 
-bookmark_names_file_location :: IO FilePath
-bookmark_names_file_location = (++ "bookmark_names.txt") <$> config_file_directory
 
 ---------------------------------------------------------------------------------
 
@@ -53,11 +51,9 @@ data Bookmark = Bookmark {
 instance Show Bookmark where
     show bookmark = (bookmark_name bookmark) ++ " " ++ (bookmark_path bookmark) 
 
-get_bookmarks :: FilePath -> IO (Maybe [Bookmark])
-get_bookmarks file_path = do
-    raw_bookmarks <- readFile file_path
 
-    let parser_bookmarks = many $ do
+parse_bookmarks :: SourceName -> String -> Either ParseError [Bookmark]
+parse_bookmarks = parse $ many $ do
         name  <- manyTill anyChar $ space >> spaces       
         path  <- manyTill anyChar (char '\n')  
         return $ Bookmark {
@@ -65,7 +61,12 @@ get_bookmarks file_path = do
             bookmark_path = path
         }
 
-    return $ case parse parser_bookmarks "" raw_bookmarks of
+
+get_bookmarks :: FilePath -> IO (Maybe [Bookmark])
+get_bookmarks file_path = do
+    raw_bookmarks <- readFile file_path
+
+    return $ case parse_bookmarks "" raw_bookmarks of
         Left  _       -> Nothing
         Right result  -> Just result
 
@@ -73,7 +74,11 @@ write_bookmark :: FilePath -> Bookmark -> IO ()
 write_bookmark file_path bookmark = appendFile file_path $ (show bookmark) ++ "\n"
 
 with_bookmarks :: Maybe [Bookmark] -> ([Bookmark] -> IO ()) -> IO ()
-with_bookmarks = flip (maybe (echo "Ill-formatted file"))
+with_bookmarks = flip $ maybe corrupted_config_file
+                 where
+                    corrupted_config_file = do
+                        bookmark_db_location_ <- bookmark_db_location
+                        echo $ "Ill-formatted config file ; can't parse " ++  bookmark_db_location_
 
 ---------------------------------------------------------------------------------
 main :: IO ()
@@ -163,7 +168,6 @@ bookmark raw_name = do
     bookmark_db_location_ <- bookmark_db_location
     write_bookmark bookmark_db_location_ bookmark
     echo $ "Added " ++ current_dir ++ " as " ++ name
-    -- appendFile bookmark_names_file_location $ name ++ "\n"
 
 
 jump_to :: String -> IO ()

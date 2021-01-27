@@ -21,6 +21,8 @@ restore:
 	cp -f /tmp/jump_bu/.bashrc $(BASHRC)
 
 
+.SILENT: install
+	
 install: all backup
 	@echo ">>>>>>>>> Making configuration directory at "$(CONFIG_FOLDER)
 	mkdir -p $(CONFIG_FOLDER)
