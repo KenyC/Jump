@@ -145,6 +145,7 @@ clear name = case isBlank name of
                             bookmark_db_location_ <- bookmark_db_location
                             writeFile bookmark_db_location_ ""
                             forM_ bookmarks_wo_element $ write_bookmark bookmark_db_location_
+                            echo $ "Removed bookmark \"" ++ name ++ "\""
                             -- writeFile bookmark_db_location $ mconcat [line ++ "\n" | line <- lines_wo_name]
                         --
 
@@ -167,7 +168,7 @@ bookmark raw_name = do
 
     bookmark_db_location_ <- bookmark_db_location
     write_bookmark bookmark_db_location_ bookmark
-    echo $ "Added " ++ current_dir ++ " as " ++ name
+    echo $ "Added bookmark \"" ++ current_dir ++ "\" as \"" ++ name ++ "\""
 
 
 jump_to :: String -> IO ()
@@ -180,6 +181,6 @@ jump_to name = do
             -- print $ filter ((isPrefixOf name) . bookmark_name) $ bookmarks
 
             case paths of 
-                []        -> echo "Path not found"
+                []        -> echo "Bookmark not found!"
                 [path]    -> cd path
-                path:rest -> echo "Conflicting shortcut names"
+                path:rest -> echo "Two bookmarks have the same name."
