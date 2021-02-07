@@ -2,15 +2,17 @@
 INSTALL_FOLDER=~/Documents/Utilities/jump/
 CONFIG_FOLDER=~/.config/jump/
 BASHRC=~/.bashrc
+COMPILE_FLAGS=-dynamic
 
 AUTOCOMPLETE_FILE=$(INSTALL_FOLDER)auto_complete.bash
 BASHFUNCTION_FILE=$(INSTALL_FOLDER)jump_function.bash
 
 all: src/Main
 	mv src/Main .
+	strip ./Main
 
 src/Main: src/Main.hs
-	ghc src/Main.hs
+	ghc $(COMPILE_FLAGS) src/Main.hs
 
 backup:
 	@echo ">>> Backing up .bashrc and other crucial files..."
@@ -19,6 +21,19 @@ backup:
 
 restore:
 	cp -f /tmp/jump_bu/.bashrc $(BASHRC)
+
+backup_profile:
+	@echo ">>> Backing up profile..."
+	mkdir -p /tmp/jump_bu/
+	cp -r $(CONFIG_FOLDER)* /tmp/jump_bu/
+
+restore_profile:
+	@echo ">>> Restoring backed-up profile..."
+	rm $(CONFIG_FOLDER)*
+	cp -r /tmp/jump/* $(CONFIG_FOLDER)
+
+
+
 
 
 .SILENT: install

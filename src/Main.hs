@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
 
 import System.Console.GetOpt
@@ -6,8 +7,9 @@ import System.Directory
 import System.IO
 --
 import Control.Monad (forM_)
+import Control.Lens hiding (List)
 --
-import Data.Maybe (maybe, listToMaybe)
+import Data.Maybe (maybe, fromMaybe, listToMaybe)
 import Data.List
 import Data.Char  (isSpace, toLower)
 --
@@ -23,6 +25,10 @@ bookmark_db_location :: IO FilePath
 bookmark_db_location = (++ "bookmarks.txt") <$> config_file_directory
 
 
+default_env_file :: IO FilePath
+default_env_file = (++ "default_env") <$> config_file_directory
+
+
 ---------------------------------------------------------------------------------
 
 echo :: String -> IO ()
@@ -30,6 +36,9 @@ echo string  = putStrLn $ "echo \"" ++ string ++ "\""
 
 cd :: FilePath -> IO ()
 cd file_path = putStrLn $ "cd \"" ++ file_path ++ "\"" 
+
+source :: FilePath -> IO ()
+source file_path = putStrLn =<< (readFile file_path) 
 
 ---------------------------------------------------------------------------------
 
@@ -42,6 +51,32 @@ strip :: String -> String
 strip = dropWhileEnd isSpace . dropWhile isSpace
 
 ---------------------------------------------------------------------------------
+
+data Options = JumpTo {
+                _bookmark_to_jump :: String,
+                _env :: Maybe (Maybe String) -- if Nothing, no env required ; if Just Nothing, default env 
+             }
+             | MakeBookmark (Maybe String) 
+             | Clear        (Maybe String) 
+             | List 
+             | Names
+makeLenses ''Options
+makePrisms ''Options
+
+start_options :: Options
+start_options = JumpTo "" Nothing
+
+options :: [OptDescr (Options -> Options)]
+options = [Option ['e'] ["env"]      (OptArg set_env "ENVIRONMENT")                  "Environment to source after jump",
+           Option ['b'] ["bookmark"] (OptArg (const . MakeBookmark) "BOOKMARK_NAME") "",
+           Option ['n'] ["names"]    (NoArg  (const Names))                          "List bookmark names",
+           Option ['l'] ["list"]     (NoArg  (const List))                           "List bookmark names and location",
+           Option ['c'] ["clear"]    (OptArg (const . Clear) "BOOKMARK_NAME")        "Delete bookmark"
+          ]
+          where set_env maybe_env = set (_JumpTo . _2) (Just maybe_env)
+
+
+------------------------------------------------------------------------------
 
 data Bookmark = Bookmark {
     bookmark_name :: String,
@@ -84,14 +119,23 @@ with_bookmarks = flip $ maybe corrupted_config_file
 main :: IO ()
 main = do
     args <- getArgs
-    -- putStrLn "jzfpo"
 
-    case args of 
-        "--bookmark":rest  -> bookmark $! mconcat rest 
-        "--clear":rest     -> clear    $! mconcat rest 
-        "--list" :rest     -> list_bookmarks    
-        "--names":rest     -> print_names    
-        otherwise          -> jump_to  $! mconcat args
+    let header     = "Usage info:"
+        print_help = echo $ usageInfo header options 
+
+    case getOpt Permute options args of
+        (opts, arguments, []) -> let action = set (_JumpTo . _1) 
+                                                       (fromMaybe "" $ safe_head arguments) $  
+                                                       foldr ($) start_options opts
+                                 in case action of 
+                                    Clear         bookmark_        -> clear bookmark_
+                                    MakeBookmark  bookmark_        -> bookmark bookmark_
+                                    List                           -> list_bookmarks
+                                    Names                          -> print_names
+                                    JumpTo destination environment -> jump_to destination environment
+        (_, _, errors) -> do
+            echo $ concat errors
+            print_help
 
 
 
@@ -116,50 +160,50 @@ print_names = do
         forM_ bookmarks $ echo . bookmark_name
 
 
-clear :: String -> IO ()
-clear name = case isBlank name of 
-                  True -> do
-                        maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
-                        current_dir     <- getCurrentDirectory
+clear :: Maybe String -> IO ()
+clear maybe_name = case maybe_name of 
+                          Nothing -> do
+                                maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
+                                current_dir     <- getCurrentDirectory
 
-                        with_bookmarks maybe_bookmarks $ \bookmarks -> do
-                            let bookmarks_wo_element = filter ((/= name) . bookmark_path) $ bookmarks
+                                with_bookmarks maybe_bookmarks $ \bookmarks -> do
+                                    let bookmarks_wo_element = filter ((/= current_dir) . bookmark_path) $ bookmarks
 
-                            if length bookmarks_wo_element == length bookmarks
-                            then
-                                echo "Couldn't find any bookmark attached to this directory"
-                            else 
-                                do
+                                    if length bookmarks_wo_element == length bookmarks
+                                    then
+                                        echo "Couldn't find any bookmark attached to this directory"
+                                    else 
+                                        do
+                                            bookmark_db_location_ <- bookmark_db_location
+                                            writeFile bookmark_db_location_ ""
+                                            forM_ bookmarks_wo_element $ write_bookmark bookmark_db_location_
+
+
+                          Just name -> do
+                                maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
+
+                                with_bookmarks maybe_bookmarks $ \bookmarks -> do
+
+                                    let bookmarks_wo_element = filter ((/= name) . bookmark_name) $ bookmarks
+                                    -- print bookmarks
                                     bookmark_db_location_ <- bookmark_db_location
                                     writeFile bookmark_db_location_ ""
                                     forM_ bookmarks_wo_element $ write_bookmark bookmark_db_location_
-
-
-                  False -> do
-                        maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
-
-                        with_bookmarks maybe_bookmarks $ \bookmarks -> do
-
-                            let bookmarks_wo_element = filter ((/= name) . bookmark_name) $ bookmarks
-                            -- print bookmarks
-                            bookmark_db_location_ <- bookmark_db_location
-                            writeFile bookmark_db_location_ ""
-                            forM_ bookmarks_wo_element $ write_bookmark bookmark_db_location_
-                            echo $ "Removed bookmark \"" ++ name ++ "\""
+                                    echo $ "Removed bookmark \"" ++ name ++ "\""
                             -- writeFile bookmark_db_location $ mconcat [line ++ "\n" | line <- lines_wo_name]
                         --
 
 
-bookmark :: String -> IO ()
-bookmark raw_name = do 
+bookmark :: Maybe String -> IO ()
+bookmark maybe_name = do 
     current_dir <- getCurrentDirectory
     let basename :: FilePath -> String
         basename file_path = case break (== '/') file_path of
                                 (name, "")  -> name
                                 (_, rest)   -> basename $ tail rest
-        name = case isBlank raw_name of 
-                     True   -> map toLower $ basename current_dir
-                     False  -> strip raw_name
+        name = case maybe_name of 
+                     Nothing       -> map toLower $ basename current_dir
+                     Just raw_name -> strip raw_name
 
         bookmark = Bookmark {
             bookmark_name = name,
@@ -171,16 +215,24 @@ bookmark raw_name = do
     echo $ "Added bookmark \"" ++ current_dir ++ "\" as \"" ++ name ++ "\""
 
 
-jump_to :: String -> IO ()
-jump_to name = do
+jump_to :: String -> (Maybe (Maybe String)) -> IO ()
+jump_to name maybe_env = do
+    -- let name, flags  =  fromMaybe 
+    --                         ("", [])
+    --                         (uncons name_and_flags)
     maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
 
     with_bookmarks maybe_bookmarks $ \bookmarks -> do
             -- print bookmarks
             let paths = map bookmark_path $ filter ((== name) . bookmark_name) $ bookmarks
+                source_env = case maybe_env of
+                                Nothing              -> return ()
+                                Just maybe_env_name  -> (=<<) source $ case maybe_env_name of 
+                                                              Nothing       -> default_env_file
+                                                              Just env_name -> (++ env_name) <$> config_file_directory
             -- print $ filter ((isPrefixOf name) . bookmark_name) $ bookmarks
 
             case paths of 
-                []        -> echo "Bookmark not found!"
-                [path]    -> cd path
+                []        -> echo $ "Bookmark " ++ name ++ " not found!"
+                [path]    -> cd path >> source_env
                 path:rest -> echo "Two bookmarks have the same name."

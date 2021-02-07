@@ -45,6 +45,24 @@ jump favorite_dir_ever
 jump --clear name_of_the_bookmark_that_is_no_longer_in_favour
 ```
 
+## Environments
+
+If you want some commands to be executed after jump (e.g. rename the terminal, ``conda activate``, etc.), write down the commands to ``~/.config/jump/default_env`` (a.k.a. *default environment file*) and execute:
+
+```bash
+jump favorite_dir_ever -e
+# Alternatively
+# jump favorite_dir_ever --env
+```
+
+You can create and use non-default environment files in ``~/.config/jump/``. If ``python_env`` is the name of the file you created, call it using:
+
+```bash
+jump favorite_dir_ever -epython_env
+```
+
+(**Note:** Ideally, one would want a space between "-e" and ``python_env``. The Haskell GetOpt library used for command line does not seem to allow it...)
+
 # How it works
 
 Creates a bash function ``jump`` in your ``.bashrc``. The function ``jump`` itself calls a Haskell program that locates the relevant folder. The output of this program tells ``jump`` where to jump to. 
