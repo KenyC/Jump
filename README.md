@@ -3,6 +3,11 @@ Jump
 
 Very lightweight tool to bookmark some directories and jump to them quickly
 
+# Requirements
+
+  - GHC
+  - Linux
+
 # Installation
 
 Download this repo and run the following
@@ -61,8 +66,8 @@ You can create and use non-default environment files in ``~/.config/jump/``. If 
 jump favorite_dir_ever -epython_env
 ```
 
-(**Note:** Ideally, one would want a space between "-e" and ``python_env``. The Haskell GetOpt library used for command line does not seem to allow it...)
+(**Note:** Ideally, one would want a space between "-e" and ``python_env``. The Haskell GetOpt library used for parsing command line arguments does not seem to allow it...)
 
 # How it works
 
-Creates a bash function ``jump`` in your ``.bashrc``. The function ``jump`` itself calls a Haskell program that locates the relevant folder. The output of this program tells ``jump`` where to jump to. 
+The difficulty is that a subprocess cannot modify characteristic of the parent process (in particular, its current working directory). To hack one's way around the problem, ``make install`` thus creates a bash function ``jump`` in your ``.bashrc``. This function ``jump`` itself calls a Haskell program which gives bash instructions to be sourced by the ``jump`` function. 

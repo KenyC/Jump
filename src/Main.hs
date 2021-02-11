@@ -40,6 +40,9 @@ cd file_path = putStrLn $ "cd \"" ++ file_path ++ "\""
 source :: FilePath -> IO ()
 source file_path = putStrLn =<< (readFile file_path) 
 
+title :: String -> IO ()
+title title_cmd = putStrLn $ "title \"" ++ title_cmd ++ "\""
+
 ---------------------------------------------------------------------------------
 
 safe_head = listToMaybe
@@ -54,7 +57,8 @@ strip = dropWhileEnd isSpace . dropWhile isSpace
 
 data Options = JumpTo {
                 _bookmark_to_jump :: String,
-                _env :: Maybe (Maybe String) -- if Nothing, no env required ; if Just Nothing, default env 
+                _env :: Maybe (Maybe String), -- if Nothing, no env required ; if Just Nothing, default env 
+                _must_set_title :: Bool
              }
              | MakeBookmark (Maybe String) 
              | Clear        (Maybe String) 
@@ -64,16 +68,23 @@ makeLenses ''Options
 makePrisms ''Options
 
 start_options :: Options
-start_options = JumpTo "" Nothing
+start_options = JumpTo {
+  _bookmark_to_jump = "",
+  _env              = Nothing,
+  _must_set_title   = False
+}
+
 
 options :: [OptDescr (Options -> Options)]
 options = [Option ['e'] ["env"]      (OptArg set_env "ENVIRONMENT")                  "Environment to source after jump",
            Option ['b'] ["bookmark"] (OptArg (const . MakeBookmark) "BOOKMARK_NAME") "",
            Option ['n'] ["names"]    (NoArg  (const Names))                          "List bookmark names",
+           Option ['t'] ["title"]    (NoArg  set_title)                              "Set terminal name after jumping",
            Option ['l'] ["list"]     (NoArg  (const List))                           "List bookmark names and location",
            Option ['c'] ["clear"]    (OptArg (const . Clear) "BOOKMARK_NAME")        "Delete bookmark"
           ]
-          where set_env maybe_env = set (_JumpTo . _2) (Just maybe_env)
+          where set_env maybe_env = set (_JumpTo . _2) (Just maybe_env) -- set env value only if Options is a JumpTo constructor
+                set_title = set (_JumpTo . _3) True                     -- set title value only if Options is a JumpTo constructor
 
 
 ------------------------------------------------------------------------------
@@ -132,7 +143,7 @@ main = do
                                     MakeBookmark  bookmark_        -> bookmark bookmark_
                                     List                           -> list_bookmarks
                                     Names                          -> print_names
-                                    JumpTo destination environment -> jump_to destination environment
+                                    JumpTo destination environment title -> jump_to destination environment title
         (_, _, errors) -> do
             echo $ concat errors
             print_help
@@ -215,8 +226,8 @@ bookmark maybe_name = do
     echo $ "Added bookmark \"" ++ current_dir ++ "\" as \"" ++ name ++ "\""
 
 
-jump_to :: String -> (Maybe (Maybe String)) -> IO ()
-jump_to name maybe_env = do
+jump_to :: String -> (Maybe (Maybe String)) -> Bool -> IO ()
+jump_to name maybe_env must_set_title = do
     -- let name, flags  =  fromMaybe 
     --                         ("", [])
     --                         (uncons name_and_flags)
@@ -225,6 +236,7 @@ jump_to name maybe_env = do
     with_bookmarks maybe_bookmarks $ \bookmarks -> do
             -- print bookmarks
             let paths = map bookmark_path $ filter ((== name) . bookmark_name) $ bookmarks
+                set_title = if must_set_title then title name else return () 
                 source_env = case maybe_env of
                                 Nothing              -> return ()
                                 Just maybe_env_name  -> (=<<) source $ case maybe_env_name of 
@@ -234,5 +246,5 @@ jump_to name maybe_env = do
 
             case paths of 
                 []        -> echo $ "Bookmark " ++ name ++ " not found!"
-                [path]    -> cd path >> source_env
+                [path]    -> cd path >> source_env >> set_title
                 path:rest -> echo "Two bookmarks have the same name."
