@@ -1,7 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Main where
 
+#ifdef ORIGINAL_GETOPTS
 import System.Console.GetOpt
+#else
+import CustomGetOpt
+#endif
 import System.Environment
 import System.Directory
 import System.IO
@@ -77,7 +81,7 @@ start_options = JumpTo {
 
 options :: [OptDescr (Options -> Options)]
 options = [Option ['e'] ["env"]      (OptArg set_env "ENVIRONMENT")                  "Environment to source after jump",
-           Option ['b'] ["bookmark"] (OptArg (const . MakeBookmark) "BOOKMARK_NAME") "",
+           Option ['b'] ["bookmark"] (OptArg (const . MakeBookmark) "BOOKMARK_NAME") "Create bookmark (default: directory name lower case)",
            Option ['n'] ["names"]    (NoArg  (const Names))                          "List bookmark names",
            Option ['t'] ["title"]    (NoArg  set_title)                              "Set terminal name after jumping",
            Option ['l'] ["list"]     (NoArg  (const List))                           "List bookmark names and location",
@@ -135,15 +139,15 @@ main = do
         print_help = echo $ usageInfo header options 
 
     case getOpt Permute options args of
-        (opts, arguments, []) -> let action = set (_JumpTo . _1) 
-                                                       (fromMaybe "" $ safe_head arguments) $  
-                                                       foldr ($) start_options opts
+        (opts, arguments, []) -> let action = foldr ($) start_options opts
                                  in case action of 
                                     Clear         bookmark_        -> clear bookmark_
                                     MakeBookmark  bookmark_        -> bookmark bookmark_
                                     List                           -> list_bookmarks
                                     Names                          -> print_names
-                                    JumpTo destination environment title -> jump_to destination environment title
+                                    JumpTo _ environment title     -> case arguments of
+                                                                              []            -> echo "No bookmark specified!"
+                                                                              destination:_ -> jump_to destination environment title
         (_, _, errors) -> do
             echo $ concat errors
             print_help

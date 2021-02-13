@@ -2,7 +2,8 @@
 INSTALL_FOLDER=~/Documents/Utilities/jump/
 CONFIG_FOLDER=~/.config/jump/
 BASHRC=~/.bashrc
-COMPILE_FLAGS=-dynamic
+GET_OPTS_LIB = $(if $(ORIGINAL_GETOPTS),-DORIGINAL_GETOPTS,)
+COMPILE_FLAGS=-dynamic -isrc -cpp $(GET_OPTS_LIB)
 
 AUTOCOMPLETE_FILE=$(INSTALL_FOLDER)auto_complete.bash
 BASHFUNCTION_FILE=$(INSTALL_FOLDER)jump_function.bash

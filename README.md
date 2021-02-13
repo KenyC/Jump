@@ -70,4 +70,4 @@ jump favorite_dir_ever -epython_env
 
 # How it works
 
-The difficulty is that a subprocess cannot modify characteristic of the parent process (in particular, its current working directory). To hack one's way around the problem, ``make install`` thus creates a bash function ``jump`` in your ``.bashrc``. This function ``jump`` itself calls a Haskell program which gives bash instructions to be sourced by the ``jump`` function. 
+The difficulty is that a subprocess cannot modify characteristics of the parent process (in particular, its current working directory). To hack one's way around the problem, ``make install`` creates a bash function ``jump`` in your ``.bashrc``. This function ``jump`` itself calls a Haskell program which gives bash instructions to be sourced by the ``jump`` function. 
