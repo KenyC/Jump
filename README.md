@@ -47,7 +47,7 @@ jump favorite_dir_ever
 ## Remove bookmarked directory
 
 ```bash
-jump --clear name_of_the_bookmark_that_is_no_longer_in_favour
+jump --clear name_of_the_bookmark_that_has_fallen_out_of_grace
 ```
 
 ## Environments
@@ -63,10 +63,15 @@ jump favorite_dir_ever -e
 You can create and use non-default environment files in ``~/.config/jump/``. If ``python_env`` is the name of the file you created, call it using:
 
 ```bash
-jump favorite_dir_ever -epython_env
+jump favorite_dir_ever -e python_env
 ```
 
-(**Note:** Ideally, one would want a space between "-e" and ``python_env``. The Haskell GetOpt library used for parsing command line arguments does not seem to allow it...)
+(**Note:** The space between an option taking an optional argument like -e and its argument isn't kosher. Some (not me) would prefer to write ``-e=python_env``. If you wish Jump to have this behavior, install it using the following command:)
+
+```bash
+make install ORIGINAL_GETOPTS=1
+```
+
 
 # How it works
 
