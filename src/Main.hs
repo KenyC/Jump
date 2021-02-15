@@ -36,16 +36,16 @@ default_env_file = (++ "default_env") <$> config_file_directory
 ---------------------------------------------------------------------------------
 
 echo :: String -> IO ()
-echo string  = putStrLn $ "echo \"" ++ string ++ "\""
+echo string  = putStrLn $ "echo \"" ++ (escape string) ++ "\""
 
 cd :: FilePath -> IO ()
-cd file_path = putStrLn $ "cd \"" ++ file_path ++ "\"" 
+cd file_path = putStrLn $ "cd \"" ++ (escape file_path) ++ "\"" 
 
 source :: FilePath -> IO ()
 source file_path = putStrLn =<< (readFile file_path) 
 
 title :: String -> IO ()
-title title_cmd = putStrLn $ "title \"" ++ title_cmd ++ "\""
+title title_cmd = putStrLn $ "title \"" ++ (escape title_cmd) ++ "\""
 
 ---------------------------------------------------------------------------------
 
@@ -56,6 +56,11 @@ isBlank = all isSpace
 
 strip :: String -> String
 strip = dropWhileEnd isSpace . dropWhile isSpace
+
+escape :: String -> String
+escape = foldr escape_char ""
+         where escape_char '"' = ('\\':) . ('"':)
+               escape_char x   = (x:) 
 
 ---------------------------------------------------------------------------------
 
@@ -158,14 +163,17 @@ list_bookmarks :: IO ()
 list_bookmarks = do
     maybe_bookmarks <- get_bookmarks =<< bookmark_db_location
     with_bookmarks maybe_bookmarks $ \bookmarks -> do
-        let max_len_name  = maximum $ map (length . bookmark_name) $ bookmarks 
+        let alphabetically_sorted_bookmarks :: [Bookmark]
+            alphabetically_sorted_bookmarks = sortOn bookmark_name bookmarks
+
+            max_len_name  = maximum $ map (length . bookmark_name) $ alphabetically_sorted_bookmarks 
             size_matched_bookmark :: Int -> Bookmark -> String
-            size_matched_bookmark size_name bookmark = size_matched_name ++ "  :  " ++ (bookmark_path bookmark)
+            size_matched_bookmark size_name bookmark = size_matched_name ++ "    " ++ (bookmark_path bookmark)
                                                        where name              = bookmark_name bookmark
                                                              missing_length    = size_name - (length name) 
                                                              size_matched_name = name ++ replicate missing_length ' '
             
-        forM_ bookmarks $ \bookmark -> do
+        forM_ alphabetically_sorted_bookmarks $ \bookmark -> do
             echo $ size_matched_bookmark max_len_name bookmark
 
 print_names :: IO ()
