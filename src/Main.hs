@@ -10,7 +10,7 @@ import System.Environment
 import System.Directory
 import System.IO
 --
-import Control.Monad (forM_)
+import Control.Monad (forM_, join)
 import Control.Lens hiding (List)
 --
 import Data.Maybe (maybe, fromMaybe, listToMaybe)
@@ -45,7 +45,15 @@ source :: FilePath -> IO ()
 source file_path = putStrLn =<< (readFile file_path) 
 
 title :: String -> IO ()
-title title_cmd = putStrLn $ "title \"" ++ (escape title_cmd) ++ "\""
+title title_cmd = putStrLn $ before ++ (escape title_cmd) ++ after
+                  where
+                  before, after :: String
+                  before = join [ "if [[ -z \"$ORIG\" ]]; then\n"
+                                , "  ORIG=\"$PS1\"\n"
+                                , "fi\n"
+                                , "TITLE=\"\\[\\e]2;"]
+                  after = join [ "\\a\\]\" \n"
+                               , "PS1=\"${ORIG}${TITLE}\"\n"]
 
 ---------------------------------------------------------------------------------
 
