@@ -10,7 +10,7 @@ Very lightweight tool to bookmark some directories and jump to them quickly
 
 # Installation
 
-Download this repo and run the following
+Download this repository and run the following
 
 ```bash
 make install
@@ -33,7 +33,7 @@ If you don't give it a name, the bookmark's name will default to the directory's
 ```bash
 cd ~/I/love/this/directory/so/much
 jump --bookmark
-# Added a bookmark with name "much"
+# stdout: Added a bookmark with name "much"
 ```
 
 

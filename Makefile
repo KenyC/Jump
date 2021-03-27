@@ -2,36 +2,51 @@
 INSTALL_FOLDER=~/Documents/Utilities/jump/
 CONFIG_FOLDER=~/.config/jump/
 BASHRC=~/.bashrc
-GET_OPTS_LIB = $(if $(ORIGINAL_GETOPTS),-DORIGINAL_GETOPTS,)
-COMPILE_FLAGS=-dynamic -isrc -cpp $(GET_OPTS_LIB)
+
+include config.mk
+
+GET_OPTS_LIB=
+ifeq ($(ORIGINAL_GETOPTS),yes)
+GET_OPTS_LIB+=-DORIGINAL_GETOPTS
+endif
+
+DYNAMIC_FLAG=
+ifeq ($(STATIC),no)
+DYNAMIC_FLAG+=-dynamic
+else
+DYNAMIC_FLAG+=-static
+endif
+
+COMPILE_FLAGS=$(DYNAMIC_FLAG) -isrc -cpp $(GET_OPTS_LIB)
 
 AUTOCOMPLETE_FILE=$(INSTALL_FOLDER)auto_complete.bash
 BASHFUNCTION_FILE=$(INSTALL_FOLDER)jump_function.bash
+TEMPORARY_BACKUP_FOLDER=/tmp/jump_bu/
 
 all: src/Main
 	mv src/Main .
-	strip ./Main
+	strip Main
 
 src/Main: src/Main.hs
 	ghc $(COMPILE_FLAGS) src/Main.hs
 
 backup:
 	@echo ">>> Backing up .bashrc and other crucial files..."
-	mkdir -p /tmp/jump_bu/
-	cp $(BASHRC) /tmp/jump_bu/
+	mkdir -p $(TEMPORARY_BACKUP_FOLDER)
+	cp $(BASHRC) $(TEMPORARY_BACKUP_FOLDER)
 
 restore:
-	cp -f /tmp/jump_bu/.bashrc $(BASHRC)
+	cp -f $(TEMPORARY_BACKUP_FOLDER).bashrc $(BASHRC)
 
 backup_profile:
 	@echo ">>> Backing up profile..."
-	mkdir -p /tmp/jump_bu/
-	cp -r $(CONFIG_FOLDER)* /tmp/jump_bu/
+	mkdir -p $(TEMPORARY_BACKUP_FOLDER)
+	cp -r $(CONFIG_FOLDER)* $(TEMPORARY_BACKUP_FOLDER)
 
 restore_profile:
 	@echo ">>> Restoring backed-up profile..."
 	rm $(CONFIG_FOLDER)*
-	cp -r /tmp/jump/* $(CONFIG_FOLDER)
+	cp -r $(TEMPORARY_BACKUP_FOLDER)* $(CONFIG_FOLDER)
 
 
 
