@@ -1,7 +1,4 @@
 
-INSTALL_FOLDER=~/Documents/Utilities/jump/
-CONFIG_FOLDER=~/.config/jump/
-BASHRC=~/.bashrc
 
 include config.mk
 
@@ -22,13 +19,14 @@ COMPILE_FLAGS=$(DYNAMIC_FLAG) -isrc -cpp $(GET_OPTS_LIB)
 AUTOCOMPLETE_FILE=$(INSTALL_FOLDER)auto_complete.bash
 BASHFUNCTION_FILE=$(INSTALL_FOLDER)jump_function.bash
 TEMPORARY_BACKUP_FOLDER=/tmp/jump_bu/
+TEMPORARY_SCRIPT_FOLDER=/tmp/jump_scripts/
 
-all: src/Main
-	mv src/Main .
-	strip Main
+all: build/jump
+	strip $<
 
-src/Main: src/Main.hs
-	ghc $(COMPILE_FLAGS) src/Main.hs
+build/jump: src/Main.hs
+	@mkdir -p build
+	ghc $(COMPILE_FLAGS) $< -o $@
 
 backup:
 	@echo ">>> Backing up .bashrc and other crucial files..."
@@ -41,12 +39,15 @@ restore:
 backup_profile:
 	@echo ">>> Backing up profile..."
 	mkdir -p $(TEMPORARY_BACKUP_FOLDER)
+	mkdir -p $(CONFIG_FOLDER)
 	cp -r $(CONFIG_FOLDER)* $(TEMPORARY_BACKUP_FOLDER)
 
 restore_profile:
 	@echo ">>> Restoring backed-up profile..."
-	rm $(CONFIG_FOLDER)*
-	cp -r $(TEMPORARY_BACKUP_FOLDER)* $(CONFIG_FOLDER)
+	mkdir -p $(TEMPORARY_BACKUP_FOLDER)
+	mkdir -p $(CONFIG_FOLDER)
+	cp -rf $(TEMPORARY_BACKUP_FOLDER)* $(CONFIG_FOLDER)
+# 	rm $(CONFIG_FOLDER)*
 
 
 
@@ -59,11 +60,16 @@ install: all backup
 	mkdir -p $(CONFIG_FOLDER)
 	touch $(CONFIG_FOLDER)bookmarks.txt
 	#
+	@echo ">>>>>>>>> Creating bash scripts"
+	mkdir -p $(TEMPORARY_SCRIPT_FOLDER)
+	sed "s|{{INSTALL_FOLDER}}|$(INSTALL_FOLDER)|" scripts/auto_complete.bash > $(TEMPORARY_SCRIPT_FOLDER)auto_complete.bash
+	sed "s|{{INSTALL_FOLDER}}|$(INSTALL_FOLDER)|" scripts/jump_function.bash > $(TEMPORARY_SCRIPT_FOLDER)jump_function.bash
+	#
 	@echo ">>>>>>>>> Making executable directory at "$(INSTALL_FOLDER)
 	mkdir -p $(INSTALL_FOLDER)
 	rm -rf $(INSTALL_FOLDER)*
-	cp scripts/* $(INSTALL_FOLDER)
-	cp Main $(INSTALL_FOLDER)jump
+	cp $(TEMPORARY_SCRIPT_FOLDER)* $(INSTALL_FOLDER)
+	cp build/jump $(INSTALL_FOLDER)jump
 	#
 	@echo ">>>>>>>>> Adding lines to .bashrc if not already there"
 	grep -qxF 'source $(AUTOCOMPLETE_FILE)' $(BASHRC) || echo '\n\nsource $(AUTOCOMPLETE_FILE)' >> $(BASHRC)
