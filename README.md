@@ -10,7 +10,7 @@ Very lightweight tool to bookmark some directories and jump to them quickly
 
 # Installation
 
-Download this repository and run the following
+Download this repository and run the command below. Install configuration options are available in ``config.mk``
 
 ```bash
 make install

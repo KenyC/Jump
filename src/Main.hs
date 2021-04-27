@@ -21,9 +21,13 @@ import Text.Parsec
 
 ---------------------------------------------------------------------------------
 
+
 config_file_directory :: IO FilePath
+#ifdef CONFIG_FOLDER
+config_file_directory = return $ CONFIG_FOLDER
+#else
 config_file_directory = (++ "/.config/jump/") <$> getHomeDirectory
--- config_file_directory = "/home/keny/.config/jump/"
+#endif
 
 bookmark_db_location :: IO FilePath
 bookmark_db_location = (++ "bookmarks.txt") <$> config_file_directory
@@ -241,7 +245,7 @@ bookmark maybe_name = do
                                 (name, "")  -> name
                                 (_, rest)   -> basename $ tail rest
         name = case maybe_name of 
-                     Nothing       -> map toLower $ basename current_dir
+                     Nothing       -> map toLower $ filter (`notElem` " \t\n") $ basename current_dir -- remove spaces, all lowercase
                      Just raw_name -> strip raw_name
 
         bookmark = Bookmark {
