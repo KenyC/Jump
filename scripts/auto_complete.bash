@@ -1,4 +1,4 @@
 #/usr/bin/env bash
-BOOKMARKS=$(jump --names)
-# echo $BOOKMARKS
-complete -W "--clear --bookmark --list $BOOKMARKS" jump
+PATHS=$(jump --names)
+# echo $PATHS
+complete -W "--clear --bookmark --list $PATHS" jump

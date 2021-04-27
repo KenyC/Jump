@@ -1,9 +1,3 @@
-# INSTALL FOLDERS
-INSTALL_FOLDER=~/.local/share/jump/
-CONFIG_FOLDER=~/.config/jump/
-BASHRC=~/.bashrc
-
-
 # Whether the program uses Haskell "GetOpts" library or the custom version of it
 # Haskell "GetOpts" library specify short flags using "-f=VALUE"
 # Custom  "GetOpts" library specify short flags using "-f VALUE"
@@ -14,4 +8,4 @@ ORIGINAL_GETOPTS=no
 # Static: 4MB executable, does not need RTS to run, faster on loading executable
 # Dynamic: 68KB executable, must have RTS to run, slower on loading executable
 # (RTS = Haskell runtime system, the C library which all Haskell code must run with)
-STATIC=yes
+STATIC=no
