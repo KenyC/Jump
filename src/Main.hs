@@ -33,7 +33,7 @@ bookmark_db_location :: IO FilePath
 bookmark_db_location = (++ "bookmarks.txt") <$> config_file_directory
 
 default_env_file :: IO FilePath
-default_env_file = (++ "default_env") <$> config_file_directory
+default_env_file = (++ "default_env.sh") <$> config_file_directory
 
 default_file_to_source :: FilePath
 default_file_to_source = "/tmp/___verylongandarbitraryname"
@@ -277,7 +277,7 @@ jump_to handle name maybe_env must_set_title = do
                                 Nothing              -> return ()
                                 Just maybe_env_name  -> (=<<) (source handle) $ case maybe_env_name of 
                                                               Nothing       -> default_env_file
-                                                              Just env_name -> (++ env_name) <$> config_file_directory
+                                                              Just env_name -> (++ env_name ++ ".sh") <$> config_file_directory
             -- print $ filter ((isPrefixOf name) . bookmark_name) $ bookmarks
 
             case paths of 

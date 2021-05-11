@@ -52,7 +52,7 @@ jump --clear name_of_the_bookmark_that_has_fallen_out_of_grace
 
 ## Environments
 
-If you want some commands to be executed after jump (e.g. rename the terminal, ``conda activate``, etc.), write down the commands to ``~/.config/jump/default_env`` (a.k.a. *default environment file*) and execute:
+If you want some commands to be executed after jump (e.g. rename the terminal, ``conda activate``, etc.), write down the commands to ``~/.config/jump/default_env.sh`` (a.k.a. *default environment file*) and execute:
 
 ```bash
 jump favorite_dir_ever -e
@@ -60,7 +60,7 @@ jump favorite_dir_ever -e
 # jump favorite_dir_ever --env
 ```
 
-You can create and use non-default environment files in ``~/.config/jump/``. If ``python_env`` is the name of the file you created, call it using:
+You can create and use non-default environment files in ``~/.config/jump/``. If ``python_env.sh`` is the name of the file you created, call it using:
 
 ```bash
 jump favorite_dir_ever -e python_env
