@@ -1,0 +1,18 @@
+name:            Jump
+version:         0.0
+synopsis:        Very lightweight tool to bookmark some directories and jump to them quickly
+license:         MIT
+author:          Keny Chatain
+build-type:      Simple
+cabal-version:   2.0
+
+
+
+executable jump
+  hs-source-dirs:   src/
+  main-is:          Main.hs
+  default-language: Haskell2010
+  other-modules:    CustomGetOpt 
+  build-depends:    base, lens, directory 
+  extensions:       CPP
+
