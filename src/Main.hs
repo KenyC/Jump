@@ -11,7 +11,6 @@ import System.Directory
 import System.IO
 --
 import Control.Monad (forM_, join)
-import Control.Lens hiding (List)
 --
 import Data.Maybe (maybe, fromMaybe, listToMaybe)
 import Data.List
@@ -86,8 +85,6 @@ data Options = JumpTo {
              | Clear        (Maybe String) 
              | List 
              | Names
-makeLenses ''Options
-makePrisms ''Options
 
 start_options :: Options
 start_options = JumpTo {
@@ -105,8 +102,11 @@ options = [Option ['e'] ["env"]      (OptArg set_env "ENVIRONMENT")             
            Option ['l'] ["list"]     (NoArg  (const List))                           "List bookmark names and location",
            Option ['c'] ["clear"]    (OptArg (const . Clear) "BOOKMARK_NAME")        "Delete bookmark"
           ]
-          where set_env maybe_env = set (_JumpTo . _2) (Just maybe_env) -- set env value only if Options is a JumpTo constructor
-                set_title = set (_JumpTo . _3) True                     -- set title value only if Options is a JumpTo constructor
+          where set_env maybe_env jumpto@(JumpTo _ _ _) = jumpto {_env = Just maybe_env}   -- set env value only if Options is a JumpTo constructor
+                set_env _         opt                   = opt
+
+                set_title jumpto@(JumpTo _ _ _)         = jumpto {_must_set_title = True}  -- set title value only if Options is a JumpTo constructor
+                set_title opt                           = opt
 
 
 ------------------------------------------------------------------------------
