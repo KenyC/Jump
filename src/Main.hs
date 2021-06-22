@@ -15,6 +15,8 @@ import Control.Monad (forM_, join)
 import Data.Maybe (maybe, fromMaybe, listToMaybe)
 import Data.List
 import Data.Char  (isSpace, toLower)
+--
+import Text.Parsec
 
 ---------------------------------------------------------------------------------
 
@@ -118,21 +120,23 @@ output_bookmark :: Bookmark -> String
 output_bookmark bookmark = (bookmark_name bookmark) ++ " " ++ (bookmark_path bookmark) 
 
 
-parse_bookmarks :: String -> Maybe [Bookmark]
-parse_bookmarks file_contents = bookmarks
-                                where bookmark_tuples :: [(String, String)]
-                                      bookmark_tuples = over (each.both) strip $ break (== ' ') <$> lines file_contents 
-
-                                      bookmarks :: Maybe [Bookmark]
-                                      bookmarks 
-                                        | anyOf (each.both) null bookmark_tuples  = Nothing
-                                        | otherwise                               = Just $ uncurry Bookmark <$> bookmark_tuples 
+parse_bookmarks :: SourceName -> String -> Either ParseError [Bookmark]
+parse_bookmarks = parse $ many $ do
+        name  <- manyTill anyChar $ space >> spaces       
+        path  <- manyTill anyChar (char '\n')  
+        return $ Bookmark {
+            bookmark_name = name,
+            bookmark_path = path
+        }
 
 
 get_bookmarks :: FilePath -> IO (Maybe [Bookmark])
 get_bookmarks file_path = do
     raw_bookmarks <- readFile file_path
-    return $ parse_bookmarks raw_bookmarks 
+
+    return $ case parse_bookmarks "" raw_bookmarks of
+        Left  _       -> Nothing
+        Right result  -> Just result
 
 write_bookmark :: FilePath -> Bookmark -> IO ()
 write_bookmark file_path bookmark = appendFile file_path $ (output_bookmark  bookmark) ++ "\n"
