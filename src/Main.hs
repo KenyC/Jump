@@ -15,8 +15,6 @@ import Control.Monad (forM_, join)
 import Data.Maybe (maybe, fromMaybe, listToMaybe)
 import Data.List
 import Data.Char  (isSpace, toLower)
---
-import Text.Parsec 
 
 ---------------------------------------------------------------------------------
 
@@ -114,32 +112,30 @@ options = [Option ['e'] ["env"]      (OptArg set_env "ENVIRONMENT")             
 data Bookmark = Bookmark {
     bookmark_name :: String,
     bookmark_path :: FilePath
-} 
+} deriving (Eq, Show)
 
-instance Show Bookmark where
-    show bookmark = (bookmark_name bookmark) ++ " " ++ (bookmark_path bookmark) 
+output_bookmark :: Bookmark -> String
+output_bookmark bookmark = (bookmark_name bookmark) ++ " " ++ (bookmark_path bookmark) 
 
 
-parse_bookmarks :: SourceName -> String -> Either ParseError [Bookmark]
-parse_bookmarks = parse $ many $ do
-        name  <- manyTill anyChar $ space >> spaces       
-        path  <- manyTill anyChar (char '\n')  
-        return $ Bookmark {
-            bookmark_name = name,
-            bookmark_path = path
-        }
+parse_bookmarks :: String -> Maybe [Bookmark]
+parse_bookmarks file_contents = bookmarks
+                                where bookmark_tuples :: [(String, String)]
+                                      bookmark_tuples = over (each.both) strip $ break (== ' ') <$> lines file_contents 
+
+                                      bookmarks :: Maybe [Bookmark]
+                                      bookmarks 
+                                        | anyOf (each.both) null bookmark_tuples  = Nothing
+                                        | otherwise                               = Just $ uncurry Bookmark <$> bookmark_tuples 
 
 
 get_bookmarks :: FilePath -> IO (Maybe [Bookmark])
 get_bookmarks file_path = do
     raw_bookmarks <- readFile file_path
-
-    return $ case parse_bookmarks "" raw_bookmarks of
-        Left  _       -> Nothing
-        Right result  -> Just result
+    return $ parse_bookmarks raw_bookmarks 
 
 write_bookmark :: FilePath -> Bookmark -> IO ()
-write_bookmark file_path bookmark = appendFile file_path $ (show bookmark) ++ "\n"
+write_bookmark file_path bookmark = appendFile file_path $ (output_bookmark  bookmark) ++ "\n"
 
 with_bookmarks :: Maybe [Bookmark] -> ([Bookmark] -> IO ()) -> IO ()
 with_bookmarks = flip $ maybe corrupted_config_file
@@ -155,7 +151,7 @@ main = do
 
     let (file_to_source, args) = case args_raw of
                                      (filename:rest) -> (filename, rest)
-                                     _               -> (default_file_to_source, args)
+                                     _               -> (default_file_to_source, [])
 
     withFile file_to_source WriteMode $ \handle -> do
 
