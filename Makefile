@@ -69,8 +69,8 @@ install: all backup
 	#
 	@echo ">>>>>>>>> Creating bash scripts"
 	mkdir -p $(TEMPORARY_SCRIPT_FOLDER)
-	sed "s|{{INSTALL_FOLDER}}|$(INSTALL_FOLDER_STRIPPED)|" scripts/auto_complete.bash > $(TEMPORARY_SCRIPT_FOLDER)auto_complete.bash
 	sed "s|{{INSTALL_FOLDER}}|$(INSTALL_FOLDER_STRIPPED)|" scripts/jump_function.bash > $(TEMPORARY_SCRIPT_FOLDER)jump_function.bash
+	sed "s|{{INSTALL_FOLDER}}|$(INSTALL_FOLDER_STRIPPED)|" scripts/auto_complete.bash > $(TEMPORARY_SCRIPT_FOLDER)auto_complete.bash
 	#
 	@echo ">>>>>>>>> Making executable directory at "$(INSTALL_FOLDER_STRIPPED)
 	mkdir -p $(INSTALL_FOLDER_STRIPPED)
@@ -79,8 +79,8 @@ install: all backup
 	cp build/jump $(INSTALL_FOLDER_STRIPPED)jump
 	#
 	@echo ">>>>>>>>> Adding lines to .bashrc if not already there"
-	grep -qxF 'source $(AUTOCOMPLETE_FILE)' $(BASHRC_STRIPPED) || echo '\n\nsource $(AUTOCOMPLETE_FILE)' >> $(BASHRC_STRIPPED)
-	grep -qxF 'source $(BASHFUNCTION_FILE)' $(BASHRC_STRIPPED) || echo 'source $(BASHFUNCTION_FILE)'     >> $(BASHRC_STRIPPED)
+	grep -qxF 'source $(BASHFUNCTION_FILE)' $(BASHRC_STRIPPED) || echo '\n\nsource $(BASHFUNCTION_FILE)'     >> $(BASHRC_STRIPPED)
+	grep -qxF 'source $(AUTOCOMPLETE_FILE)' $(BASHRC_STRIPPED) || echo 'source $(AUTOCOMPLETE_FILE)' >> $(BASHRC_STRIPPED)
 	@echo ">>>>>>>>> Use \"make restore\" to restore the original .bashrc file"
 
 uninstall:
