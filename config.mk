@@ -1,5 +1,5 @@
 # INSTALL FOLDERS
-INSTALL_FOLDER=~/.local/share/jump/ # where jump executable and bash scripts are
+INSTALL_FOLDER=~/.jump/ # where jump executable and bash scripts are
 CONFIG_FOLDER=~/.config/jump/       # where bookmarks and environments are saved
 BASHRC=~/.bashrc                    # your bashrc file
 
